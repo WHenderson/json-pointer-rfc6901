@@ -5,8 +5,8 @@ coverage
 # https://docs.npmjs.com/misc/faq#should-i-check-my-node-modules-folder-into-git
 node_modules
 
-# built libs - need to include for bower. yuk!
-dist
+# built libs
+# lib
 
 # IDE
 .idea

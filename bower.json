@@ -1,0 +1,30 @@
+{
+  "name": "json-pointer-rfc6901",
+  "version": "0.0.0",
+  "description": "json-pointer implementation as per rfc6901",
+  "main": "dist/json-pointer-rfx6901.umd.min.js",
+  "moduleType": [
+    "amd",
+    "globals",
+    "node"
+  ],
+  "keywords": [
+    "json",
+    "pointer",
+    "json-pointer",
+    "rfc6901",
+    "fragment"
+  ],
+  "authors": [
+    "WHenderson <whenderson.github@gmail.com>"
+  ],
+  "license": "Apache-2.0",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "coverage",
+    "test",
+    "tests"
+  ]
+}
