@@ -1,1 +1,1 @@
-require('dist/json-pointer.umd.js');
+module.exports = require('./dist/json-pointer.umd.js');
