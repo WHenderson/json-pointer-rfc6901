@@ -7,34 +7,26 @@ class JsonPointerError extends Error
     @name = @constructor.name
 
 class JsonPointer
-  constructor: (obj, pointer, value) ->
+  @JsonPointerError: JsonPointerError
+
+  constructor: (object, pointer, value) ->
     return switch arguments.length
-      when 3 then @set(obj, pointer, value)
-      when 2 then @get(obj, pointer)
-      when 1 then @bind({ obj: obj })
+      when 3 then JsonPointer.set(object, pointer, value)
+      when 2 then JsonPointer.get(object, pointer)
+      when 1 then JsonPointer.smartBind({ object: object })
       else null
 
-  @bind: (bindings) ->
-    # object
-    # pointer
-    # value
-
-    obj = bindings.object
-    ptr = bindings.pointer
-    opt = bindings.options
-
+  @smartBind: ({ object: obj, pointer: ptr, options: opt }) ->
+    # What are binding?
     hasObj = obj != undefined
     hasPtr = ptr?
     hasOpt = opt?
 
+    # Lets not parse this every time!
     if typeof ptr == 'string'
       ptr = @parse(ptr)
 
-    api = @constructor.bind(@)
-
-    for own key, val of @
-      api[key] = @[key]
-
+    # default options have changed
     mergeOptions = (override) ->
       o = {}
 
@@ -47,45 +39,92 @@ class JsonPointer
 
       return o
 
+    api = undefined
+
+    # Every combination of bindings
     if hasObj and hasPtr and hasOpt
-      api.set = (value, override) => @set.call(api, obj, ptr, value, mergeOptions(override))
-      api.get = (override) => @get.call(api, obj, ptr, mergeOptions(override))
-      api.has = (override) => @has.call(api, obj, ptr, mergeOptions(override))
-      api.del = (override) => @del.call(api, obj, ptr, mergeOptions(override))
+      api = (value) ->
+        return switch arguments.length
+          when 1 then jp.set(obj, ptr, value, opt)
+          when 0 then jp.get(obj, ptr, opt)
+          else null
+
+      api.set = (value, override) -> obj = JsonPointer.set(obj, ptr, value, mergeOptions(override))
+      api.get = (override) -> JsonPointer.get(obj, ptr, mergeOptions(override))
+      api.has = (override) -> JsonPointer.has(obj, ptr, mergeOptions(override))
+      api.del = (override) -> obj = JsonPointer.del(obj, ptr, mergeOptions(override))
     else if hasObj and hasPtr
-      api.set = @set.bind(api, obj, ptr)
-      api.get = @get.bind(api, obj, ptr)
-      api.has = @has.bind(api, obj, ptr)
-      api.del = @del.bind(api, obj, ptr)
+      api = (value) ->
+        return switch arguments.length
+          when 1 then jp.set(obj, ptr, value)
+          when 0 then jp.get(obj, ptr)
+          else null
+
+      api.set = (value, override) -> obj = JsonPointer.set(obj, ptr, value, override)
+      api.get = (override) -> JsonPointer.get(obj, ptr, override)
+      api.has = (override) -> JsonPointer.has(obj, ptr, override)
+      api.del = (override) -> obj = JsonPointer.del(obj, ptr, override)
     else if hasObj and hasOpt
-      api.set = (ptr, value, override) => @set.call(api, obj, ptr, value, mergeOptions(override))
-      api.get = (ptr, override) => @get.call(api, obj, ptr, mergeOptions(override))
-      api.has = (ptr, override) => @has.call(api, obj, ptr, mergeOptions(override))
-      api.del = (ptr, override) => @del.call(api, obj, ptr, mergeOptions(override))
+      api = (ptr, value) ->
+        return switch arguments.length
+          when 2 then jp.set(obj, ptr, value, opt)
+          when 1 then jp.get(obj, ptr, opt)
+          else null
+
+      api.set = (ptr, value, override) -> obj = JsonPointer.set(obj, ptr, value, mergeOptions(override))
+      api.get = (ptr, override) -> JsonPointer.get(obj, ptr, mergeOptions(override))
+      api.has = (ptr, override) -> JsonPointer.has(obj, ptr, mergeOptions(override))
+      api.del = (ptr, override) -> obj = JsonPointer.del(obj, ptr, mergeOptions(override))
     else if hasPtr and hasOpt
-      api.set = (obj, value, override) => @set.call(api, obj, ptr, value, mergeOptions(override))
-      api.get = (obj, override) => @get.call(api, obj, ptr, mergeOptions(override))
-      api.has = (obj, override) => @has.call(api, obj, ptr, mergeOptions(override))
-      api.del = (obj, override) => @del.call(api, obj, ptr, mergeOptions(override))
+      api = (obj, value) ->
+        return switch arguments.length
+          when 2 then jp.set(obj, ptr, value, opt)
+          when 1 then jp.get(obj, ptr, opt)
+          else null
+
+      api.set = (obj, value, override) -> JsonPointer.set(obj, ptr, value, mergeOptions(override))
+      api.get = (obj, override) -> JsonPointer.get(obj, ptr, mergeOptions(override))
+      api.has = (obj, override) -> JsonPointer.has(obj, ptr, mergeOptions(override))
+      api.del = (obj, override) -> JsonPointer.del(obj, ptr, mergeOptions(override))
     else if hasOpt
-      api.set = (obj, ptr, value, override) => @set.call(api, obj, ptr, value, mergeOptions(override))
-      api.get = (obj, ptr, override) => @get.call(api, obj, ptr, mergeOptions(override))
-      api.has = (obj, ptr, override) => @has.call(api, obj, ptr, mergeOptions(override))
-      api.del = (obj, ptr, override) => @del.call(api, obj, ptr, mergeOptions(override))
+      api = (obj, ptr, value) ->
+        return switch arguments.length
+          when 3 then jp.set(obj, ptr, value, opt)
+          when 2 then jp.get(obj, ptr, opt)
+          when 1 then api.smartBind({ object: obj })
+          else null
+
+      api.set = (obj, ptr, value, override) -> JsonPointer.set(obj, ptr, value, mergeOptions(override))
+      api.get = (obj, ptr, override) -> JsonPointer.get(obj, ptr, mergeOptions(override))
+      api.has = (obj, ptr, override) -> JsonPointer.has(obj, ptr, mergeOptions(override))
+      api.del = (obj, ptr, override) -> JsonPointer.del(obj, ptr, mergeOptions(override))
     else if hasObj
-      api.set = @set.bind(api, obj)
-      api.get = @get.bind(api, obj)
-      api.has = @has.bind(api, obj)
-      api.del = @del.bind(api, obj)
+      api = (ptr, value) ->
+        return switch arguments.length
+          when 1 then jp.set(obj, ptr, value)
+          when 0 then jp.get(obj, ptr)
+          else null
+
+      api.set = (ptr, value, override) -> obj = JsonPointer.set(obj, ptr, value, override)
+      api.get = (ptr, override) -> JsonPointer.get(obj, ptr, override)
+      api.has = (ptr, override) -> JsonPointer.has(obj, ptr, override)
+      api.del = (ptr, override) -> obj = JsonPointer.del(obj, ptr, override)
     else if hasPtr
-      api.set = (obj, value, options) => @set.call(api, obj, ptr, value, options)
-      api.get = (obj, options) => @get.call(api, obj, ptr, options)
-      api.has = (obj, options) => @has.call(api, obj, ptr, options)
-      api.del = (obj, options) => @del.call(api, obj, ptr, options)
+      api = (obj, value) ->
+        return switch arguments.length
+          when 1 then jp.set(obj, ptr, value)
+          when 0 then jp.get(obj, ptr)
+          else null
+
+      api.set = (obj, value, override) -> JsonPointer.set(obj, ptr, value, override)
+      api.get = (obj, override) -> JsonPointer.get(obj, ptr, override)
+      api.has = (obj, override) -> JsonPointer.has(obj, ptr, override)
+      api.del = (obj, override) -> JsonPointer.del(obj, ptr, override)
     else
       return @
 
-    api.bind = (override) ->
+    # smartBind has new defaults
+    api.smartBind = (override) ->
       o = {}
 
       if {}.hasOwnProperty.call(override, 'object')
@@ -103,6 +142,14 @@ class JsonPointer
       else if hasObj
         o.options = opt
 
+      return JsonPointer.smartBind(o)
+
+    # copy the remaining methods which do not need binding
+    for own key, val of JsonPointer
+      if not {}.hasOwnProperty.call(api, key)
+        api[key] = val
+
+    # final result
     return api
 
   @escape: (segment) ->
@@ -121,7 +168,15 @@ class JsonPointer
     return str.substring(1).split('/').map(JsonPointer.unescape)
 
   @compile: (segments) ->
-    segents.map((segment) -> '/' + segment).join()
+    segments.map((segment) -> '/' + JsonPointer.escape(segment)).join('')
+
+  @hasJsonProp: (obj, key) ->
+    if Array.isArray(obj)
+      return (typeof key == 'number') and (key < obj.length)
+    else if typeof obj == 'object'
+      return {}.hasOwnProperty.call(obj, key)
+    else
+      return false
 
   @hasOwnProp: (obj, key) ->
     {}.hasOwnProperty.call(obj, key)
@@ -135,28 +190,32 @@ class JsonPointer
   @setProp: (obj, key, value) ->
     obj[key] = value
 
-  @getNotFound: (root, segments, node, iSegment) ->
+  @getNotFound: (obj, segment, root, segments, iSegment) ->
     undefined
 
-  @setNotFound: (root, segments, node, iSegment) ->
-    segment = segments[iSegment]
-
-    if pointer[iSegment + 1].match(/^\d+|-$/)
+  @setNotFound: (obj, segment, root, segments, iSegment) ->
+    if segments[iSegment + 1].match(/^(?:0|[1-9]\d*|-)$/)
       return obj[segment] = []
     else
       return obj[segment] = {}
 
-  @delNotFound: (root, segments, node, iSegment) ->
+  @delNotFound: (obj, segment, root, segments, iSegment) ->
     @
+
+  @errorNotFound: (obj, segment, root, segments, iSegment) ->
+    throw new JsonPointerError("Unable to find json path: #{JsonPointer.compile(segments.slice(0, iSegment+1))}")
 
   @set: (obj, pointer, value, options) ->
     if typeof pointer == 'string'
       pointer = JsonPointer.parse(pointer)
 
-    hasProp = options?.hasProp ? JsonPointer.hasOwnProp
-    getProp = options?.getProp ? JsonPointer.getProp.bind(@)
-    setProp = options?.setProp ? JsonPointer.setProp.bind(@)
-    setNotFound = options?.setNotFound ? JsonPointer.setNotFound.bind(@)
+    if pointer.length == 0
+      return value
+
+    hasProp = options?.hasProp ? JsonPointer.hasJsonProp
+    getProp = options?.getProp ? JsonPointer.getProp
+    setProp = options?.setProp ? JsonPointer.setProp
+    setNotFound = options?.setNotFound ? JsonPointer.setNotFound
 
     root = obj
     iSegment = 0
@@ -168,24 +227,26 @@ class JsonPointer
 
       if segment == '-' and Array.isArray(obj)
         segment = obj.length
+      else if segment.match(/^(?:0|[1-9]\d*)$/) and Array.isArray(obj)
+        segment = parseInt(segment, 10)
 
       if iSegment == len
         setProp(obj, segment, value)
         break
       else if not hasProp(obj, segment)
-        obj = setNotFound(root, pointer, obj, pointer)
+        obj = setNotFound(obj, segment, root, pointer, iSegment - 1)
       else
         obj = getProp(obj, segment)
 
-    return @
+    return root
 
   @get: (obj, pointer, options) ->
     if typeof pointer == 'string'
       pointer = JsonPointer.parse(pointer)
 
-    hasProp = options?.hasProp ? JsonPointer.hasOwnProp
-    getProp = options?.getProp ? JsonPointer.getProp.bind(@)
-    getNotFound = options?.getNotFound ? JsonPointer.getNotFound.bind(@)
+    hasProp = options?.hasProp ? JsonPointer.hasJsonProp
+    getProp = options?.getProp ? JsonPointer.getProp
+    getNotFound = options?.getNotFound ? JsonPointer.getNotFound
 
     root = obj
     iSegment = 0
@@ -196,9 +257,11 @@ class JsonPointer
 
       if segment == '-' and Array.isArray(obj)
         segment = obj.length
+      else if segment.match(/^(?:0|[1-9]\d*)$/) and Array.isArray(obj)
+        segment = parseInt(segment, 10)
 
       if not hasProp(obj, segment)
-        return getNotFound(root, pointer, obj, iSegment - 1)
+        return getNotFound(obj, segment, root, pointer, iSegment - 1)
       else
         obj = getProp(obj, segment)
 
@@ -208,9 +271,12 @@ class JsonPointer
     if typeof pointer == 'string'
       pointer = JsonPointer.parse(pointer)
 
-    hasProp = options?.hasProp ? JsonPointer.hasOwnProp
-    getProp = options?.getProp ? JsonPointer.getProp.bind(@)
-    delNotFound = options?.delNotFound ? JsonPointer.delNotFound.bind(@)
+    if pointer.length == 0
+      return undefined
+
+    hasProp = options?.hasProp ? JsonPointer.hasJsonProp
+    getProp = options?.getProp ? JsonPointer.getProp
+    delNotFound = options?.delNotFound ? JsonPointer.delNotFound
 
     root = obj
     iSegment = 0
@@ -221,23 +287,25 @@ class JsonPointer
 
       if segment == '-' and Array.isArray(obj)
         segment = obj.length
+      else if segment.match(/^(?:0|[1-9]\d*)$/) and Array.isArray(obj)
+        segment = parseInt(segment, 10)
 
-      if iSegment == len
-        delete obj[segment]
+      if not hasProp(obj, segment)
+        delNotFound(obj, segment, root, pointer, iSegment - 1)
         break
-      else if not hasProp(obj, segment)
-        delNotFound(root, pointer, obj, iSegment - 1)
+      else if iSegment == len
+        delete obj[segment]
         break
       else
         obj = getProp(obj, segment)
 
-    return @
+    return root
 
   @has: (obj, pointer, options) ->
     if typeof pointer == 'string'
       pointer = JsonPointer.parse(pointer)
 
-    hasProp = options?.hasProp ? JsonPointer.hasOwnProp
+    hasProp = options?.hasProp ? JsonPointer.hasJsonProp
     getProp = options?.getProp ? JsonPointer.getProp
 
     iSegment = 0
@@ -246,11 +314,14 @@ class JsonPointer
       segment = pointer[iSegment]
       ++iSegment
 
+      if segment == '-' and Array.isArray(obj)
+        segment = obj.length
+      else if segment.match(/^(?:0|[1-9]\d*)$/) and Array.isArray(obj)
+        segment = parseInt(segment, 10)
+
       if not hasProp(obj, segment)
         return false
 
       obj = getProp(obj, segment)
 
     return true
-
-

@@ -84,7 +84,7 @@ gulpBuild = () ->
   .src([
       'src/json-pointer.coffee'
     ])
-  .pipe(gConcat('json-pointer.coffee', { newLine: '\r\n' }))
+  #.pipe(gConcat('json-pointer.coffee', { newLine: '\r\n' }))
   .pipe(gCoffeeLint())
   .pipe(gCoffeeLint.reporter())
   .pipe(gMirror(
@@ -92,7 +92,7 @@ gulpBuild = () ->
       (
         gLazy()
         .pipe(gSourceMaps.init)
-        .pipe(gConcat, 'json-pointer.coffee')
+        #.pipe(gConcat, 'json-pointer.coffee')
         .pipe(gCoffee, { bare: true })
         .pipe(
           gMirror,
