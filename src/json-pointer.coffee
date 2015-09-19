@@ -9,6 +9,14 @@ class JsonPointerError extends Error
 class JsonPointer
   @JsonPointerError: JsonPointerError
 
+  ###
+  # Convenience function for choosing between `.smartBind`, `.get`, and `.set`, depending on the number of arguments.
+  #
+  # @param {*} object
+  # @param {string} pointer
+  # @param {*} value
+  # @returns {*} evaluation of the proxied method
+  ###
   constructor: (object, pointer, value) ->
     return switch arguments.length
       when 3 then JsonPointer.set(object, pointer, value)
@@ -16,6 +24,16 @@ class JsonPointer
       when 1 then JsonPointer.smartBind({ object: object })
       else null
 
+  ###
+  # Creates a clone of the api, with `./.get/.has/.set/.del/.smartBind` method signatures adjusted.
+  # The smartBind method is cumulative, meaning that `.smartBind({ object: x}).smartBind({ pointer: y })` will behave as expected.
+  #
+  # @param {Object} bindings
+  # @param {*} bindings.object
+  # @param {string|string[]} bindings.pointer
+  # @param {Object} bindings.options
+  # @returns {JsonPointer}
+  ###
   @smartBind: ({ object: obj, pointer: ptr, options: opt }) ->
     # What are binding?
     hasObj = obj != undefined
@@ -152,12 +170,36 @@ class JsonPointer
     # final result
     return api
 
+  ###
+  # Escapes the given path segment as described by RFC6901.
+  #
+  # Notably, `'~'`'s are replaced with `'~0'` and `'/'`'s are replaced with `'~1'`.
+  #
+  # @param {string} segment
+  # @returns {string}
+  ###
   @escape: (segment) ->
     segment.replace(/~/g, '~0').replace(/\//g, '~1')
 
+  ###
+  # Un-Escapes the given path segment, reversing the actions of `.escape`.
+  #
+  # Notably, `'~1'`'s are replaced with `'/'` and `'~0'`'s are replaced with `'~'`.
+  #
+  # @param {string} segment
+  # @returns {string}
+  ###
   @unescape: (segment) ->
     segment.replace(/~1/g, '/').replace(/~0/g, '~')
 
+  ###
+  # Parses a json-pointer, as desribed by RFC901, into an array of path segments.
+  #
+  # @throws {JsonPointerError} for invalid json-pointers.
+  #
+  # @param {string} str
+  # @returns {string[]}
+  ###
   @parse: (str) ->
     if str == ''
       return []
@@ -167,9 +209,35 @@ class JsonPointer
 
     return str.substring(1).split('/').map(JsonPointer.unescape)
 
+  ###
+  # Converts an array of path segments into a json path.
+  # This method is the reverse of `.parse`.
+  #
+  # @param {string[]} segments
+  # @returns {string}
+  ###
   @compile: (segments) ->
     segments.map((segment) -> '/' + JsonPointer.escape(segment)).join('')
 
+  ###
+  # Callback used to determine if an object contains a given property.
+  #
+  # @callback hasProp
+  # @param {*} obj
+  # @param {string|integer} key
+  # @returns {Boolean}
+  ###
+
+  ###
+  # Returns true iff `obj` contains `key` and `obj` is either an Array or an Object.
+  # Ignores the prototype chain.
+  #
+  # Default value for `options.hasProp`.
+  #
+  # @param {*} obj
+  # @param {string|integer} key
+  # @returns {Boolean}
+  ###
   @hasJsonProp: (obj, key) ->
     if Array.isArray(obj)
       return (typeof key == 'number') and (key < obj.length)
@@ -178,33 +246,159 @@ class JsonPointer
     else
       return false
 
+  ###
+  # Returns true iff `obj` contains `key`, disregarding the prototype chain.
+  #
+  # @param {*} obj
+  # @param {string|integer} key
+  # @returns {Boolean}
+  ###
   @hasOwnProp: (obj, key) ->
     {}.hasOwnProperty.call(obj, key)
 
+  ###
+  # Returns true iff `obj` contains `key`, including via the prototype chain.
+  #
+  # @param {*} obj
+  # @param {string|integer} key
+  # @returns {Boolean}
+  ###
   @hasProp: (obj, key) ->
     key of obj
 
+  ###
+  # Callback used to retrieve a property from an object
+  #
+  # @callback getProp
+  # @param {*} obj
+  # @param {string|integer} key
+  # @returns {*}
+  ###
+
+  ###
+  # Finds the given `key` in `obj`.
+  #
+  # Default value for `options.getProp`.
+  #
+  # @param {*} obj
+  # @param {string|integer} key
+  # @returns {*}
+  ###
   @getProp: (obj, key) ->
     obj[key]
 
+  ###
+  # Callback used to set a property on an object.
+  #
+  # @callback setProp
+  # @param {*} obj
+  # @param {string|integer} key
+  # @param {*} value
+  # @returns {*}
+  ###
+
+  ###
+  # Sets the given `key` in `obj` to `value`.
+  #
+  # Default value for `options.setProp`.
+  #
+  # @param {*} obj
+  # @param {string|integer} key
+  # @param {*} value
+  # @returns {*} `value`
+  ###
   @setProp: (obj, key, value) ->
     obj[key] = value
 
+  ###
+  # Callback used to modify behaviour when a given path segment cannot be found.
+  #
+  # @callback notFound
+  # @param {*} obj
+  # @param {string|integer} key
+  # @returns {*}
+  ###
+
+  ###
+  # Returns the value to use when `.get` fails to locate a pointer segment.
+  #
+  # Default value for `options.getNotFound`.
+  #
+  # @param {*} obj
+  # @param {string|integer} segment
+  # @param {*} root
+  # @param {string[]} segments
+  # @param {integer} iSegment
+  # @returns {undefined}
+  ###
   @getNotFound: (obj, segment, root, segments, iSegment) ->
     undefined
 
+  ###
+  # Returns the value to use when `.set` fails to locate a pointer segment.
+  #
+  # Default value for `options.setNotFound`.
+  #
+  # @param {*} obj
+  # @param {string|integer} segment
+  # @param {*} root
+  # @param {string[]} segments
+  # @param {integer} iSegment
+  # @returns {undefined}
+  ###
   @setNotFound: (obj, segment, root, segments, iSegment) ->
     if segments[iSegment + 1].match(/^(?:0|[1-9]\d*|-)$/)
       return obj[segment] = []
     else
       return obj[segment] = {}
 
+  ###
+  # Performs an action when `.del` fails to locate a pointer segment.
+  #
+  # Default value for `options.delNotFound`.
+  #
+  # @param {*} obj
+  # @param {string|integer} segment
+  # @param {*} root
+  # @param {string[]} segments
+  # @param {integer} iSegment
+  # @returns {undefined}
+  ###
   @delNotFound: (obj, segment, root, segments, iSegment) ->
-    @
+    undefined
 
+  ###
+  # Raises a JsonPointerError when the given pointer segment is not found.
+  #
+  # May be used in place of the above methods via the `options` argument of `./.get/.set/.has/.del/.simpleBind`.
+  #
+  # @param {*} obj
+  # @param {string|integer} segment
+  # @param {*} root
+  # @param {string[]} segments
+  # @param {integer} iSegment
+  # @returns {undefined}
+  ###
   @errorNotFound: (obj, segment, root, segments, iSegment) ->
     throw new JsonPointerError("Unable to find json path: #{JsonPointer.compile(segments.slice(0, iSegment+1))}")
 
+  ###
+  # Sets the location in `object`, specified by `pointer`, to `value`.
+  # If `pointer` refers to the whole document, `value` is returned without modifying `object`,
+  # otherwise, `object` modified and returned.
+  #
+  # By default, if any location specified by `pointer` does not exist, the location is created using objects and arrays.
+  # Arrays are used only when the immediately following path segment is an array element as defined by the standard.
+  #
+  # @param {*} obj
+  # @param {string|string[]} pointer
+  # @param {Object} options
+  # @param {hasProp} options.hasProp
+  # @param {getProp} options.getProp
+  # @param {setProp} options.setProp
+  # @param {notFound} options.getNotFound
+  # @returns {*}
+  ###
   @set: (obj, pointer, value, options) ->
     if typeof pointer == 'string'
       pointer = JsonPointer.parse(pointer)
@@ -240,6 +434,19 @@ class JsonPointer
 
     return root
 
+  ###
+  # Finds the value in `obj` as specified by `pointer`
+  #
+  # By default, returns undefined for values which cannot be found
+  #
+  # @param {*} obj
+  # @param {string|string[]} pointer
+  # @param {Object} options
+  # @param {hasProp} options.hasProp
+  # @param {getProp} options.getProp
+  # @param {notFound} options.getNotFound
+  # @returns {*}
+  ###
   @get: (obj, pointer, options) ->
     if typeof pointer == 'string'
       pointer = JsonPointer.parse(pointer)
@@ -267,6 +474,18 @@ class JsonPointer
 
     return obj
 
+  ###
+  # Removes the location, specified by `pointer`, from `object`.
+  # Returns the modified `object`, or undefined if the `pointer` is empty.
+  #
+  # @param {*} obj
+  # @param {string|string[]} pointer
+  # @param {Object} options
+  # @param {hasProp} options.hasProp
+  # @param {getProp} options.getProp
+  # @param {notFound} options.delNotFound
+  # @returns {*}
+  ###
   @del: (obj, pointer, options) ->
     if typeof pointer == 'string'
       pointer = JsonPointer.parse(pointer)
@@ -301,6 +520,16 @@ class JsonPointer
 
     return root
 
+  ###
+  # Returns true iff the location, specified by `pointer`, exists in `object`
+  #
+  # @param {*} obj
+  # @param {string|string[]} pointer
+  # @param {Object} options
+  # @param {hasProp} options.hasProp
+  # @param {getProp} options.getProp
+  # @returns {*}
+  ###
   @has: (obj, pointer, options) ->
     if typeof pointer == 'string'
       pointer = JsonPointer.parse(pointer)

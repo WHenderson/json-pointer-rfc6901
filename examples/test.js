@@ -1,3 +1,5 @@
+// Ignore this. Just a place for fiddling with the code.
+
 var jp = require('../index');
 
 var p = jp.smartBind({

@@ -1,0 +1,13 @@
+var pointer = require('../index');
+
+console.log('result:', pointer.compile([ 'abc' ]));
+// result: /abc
+
+console.log('result:', pointer.compile([ '~', '/', 'abc' ]));
+// result: '/~0/~1/abc'
+
+console.log('result:', pointer.compile([ '' ]));
+// result: '/'
+
+console.log('result:', pointer.compile([]));
+// result:
