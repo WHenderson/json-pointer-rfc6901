@@ -11,7 +11,7 @@ json-pointer-rfc6901 provides convenient methods for handling json pointers as d
     npm install json-pointer-rfc6901
 
 ### Web
-    bower install json-pointer
+    bower install json-pointer-rfc6901
 
 ## Usage
 
