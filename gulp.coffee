@@ -14,7 +14,7 @@ gCoffeeLint = require('gulp-coffeelint')
 gCoverageEnforcer = require("gulp-istanbul-enforcer");
 
 EXPORT = 'JsonPointer'
-NAMESPACE = 'jsonPointer'
+NAMESPACE = 'JSON.pointer'
 
 pipeCoffee = gLazy()
 .pipe(gUmd, {
@@ -209,12 +209,12 @@ gulp.task('dist-git', ['dist-version'], (cb) ->
   cfgNpm = require('./package.json')
 
   exec('git add bower.json')
-  exec('git add -f dist/to-json.coffee')
-  exec('git add -f dist/to-json.node.js')
-  exec('git add -f dist/to-json.umd.js')
-  exec('git add -f dist/to-json.umd.min.js')
-  exec('git add -f dist/to-json.web.js')
-  exec('git add -f dist/to-json.web.min.js')
+  exec('git add -f dist/json-pointer.coffee')
+  exec('git add -f dist/json-pointer.node.js')
+  exec('git add -f dist/json-pointer.umd.js')
+  exec('git add -f dist/json-pointer.umd.min.js')
+  exec('git add -f dist/json-pointer.web.js')
+  exec('git add -f dist/json-pointer.web.min.js')
   exec('git checkout head')
   exec("git commit -m \"Version #{cfgNpm.version} for distribution\"")
   exec("git tag -a v#{cfgNpm.version} -m \"Add tag v#{cfgNpm.version}\"")

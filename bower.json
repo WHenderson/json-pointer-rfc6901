@@ -1,8 +1,7 @@
 {
   "name": "json-pointer",
-  "version": "0.1.0-prerelease",
   "description": "json-pointer implementation as per rfc6901",
-  "main": "dist/json-pointer-rfc6901.umd.js",
+  "main": "dist/json-pointer.umd.js",
   "moduleType": [
     "amd",
     "globals",
@@ -27,5 +26,6 @@
     "coverage",
     "test",
     "tests"
-  ]
+  ],
+  "version": "0.2.0-prerelease"
 }
