@@ -1,6 +1,6 @@
 {
-  "name": "json-pointer-rfc6901",
-  "version": "0.0.0",
+  "name": "json-pointer",
+  "version": "0.1.0",
   "description": "json-pointer implementation as per rfc6901",
   "main": "dist/json-pointer-rfx6901.umd.min.js",
   "moduleType": [
