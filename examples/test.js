@@ -1,5 +1,8 @@
 var jp = require('../index');
 
-var p = jp({ b: 2 });
+var p = jp.smartBind({
+  object: { a: 1 },
+  pointer: '/a'
+});
 
-console.log(p.get('/b'));
+console.log(p.has.apply(null, []));

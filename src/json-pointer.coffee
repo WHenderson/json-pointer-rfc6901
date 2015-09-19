@@ -27,7 +27,7 @@ class JsonPointer
       ptr = @parse(ptr)
 
     # default options have changed
-    mergeOptions = (override) ->
+    mergeOptions = (override = {}) ->
       o = {}
 
       o.hasOwnProp = override.hasOwnProp ? opt.hasOwnProp
@@ -45,8 +45,8 @@ class JsonPointer
     if hasObj and hasPtr and hasOpt
       api = (value) ->
         return switch arguments.length
-          when 1 then jp.set(obj, ptr, value, opt)
-          when 0 then jp.get(obj, ptr, opt)
+          when 1 then JsonPointer.set(obj, ptr, value, opt)
+          when 0 then JsonPointer.get(obj, ptr, opt)
           else null
 
       api.set = (value, override) -> obj = JsonPointer.set(obj, ptr, value, mergeOptions(override))
@@ -56,8 +56,8 @@ class JsonPointer
     else if hasObj and hasPtr
       api = (value) ->
         return switch arguments.length
-          when 1 then jp.set(obj, ptr, value)
-          when 0 then jp.get(obj, ptr)
+          when 1 then JsonPointer.set(obj, ptr, value)
+          when 0 then JsonPointer.get(obj, ptr)
           else null
 
       api.set = (value, override) -> obj = JsonPointer.set(obj, ptr, value, override)
@@ -67,8 +67,8 @@ class JsonPointer
     else if hasObj and hasOpt
       api = (ptr, value) ->
         return switch arguments.length
-          when 2 then jp.set(obj, ptr, value, opt)
-          when 1 then jp.get(obj, ptr, opt)
+          when 2 then JsonPointer.set(obj, ptr, value, opt)
+          when 1 then JsonPointer.get(obj, ptr, opt)
           else null
 
       api.set = (ptr, value, override) -> obj = JsonPointer.set(obj, ptr, value, mergeOptions(override))
@@ -78,8 +78,8 @@ class JsonPointer
     else if hasPtr and hasOpt
       api = (obj, value) ->
         return switch arguments.length
-          when 2 then jp.set(obj, ptr, value, opt)
-          when 1 then jp.get(obj, ptr, opt)
+          when 2 then JsonPointer.set(obj, ptr, value, opt)
+          when 1 then JsonPointer.get(obj, ptr, opt)
           else null
 
       api.set = (obj, value, override) -> JsonPointer.set(obj, ptr, value, mergeOptions(override))
@@ -89,8 +89,8 @@ class JsonPointer
     else if hasOpt
       api = (obj, ptr, value) ->
         return switch arguments.length
-          when 3 then jp.set(obj, ptr, value, opt)
-          when 2 then jp.get(obj, ptr, opt)
+          when 3 then JsonPointer.set(obj, ptr, value, opt)
+          when 2 then JsonPointer.get(obj, ptr, opt)
           when 1 then api.smartBind({ object: obj })
           else null
 
@@ -101,8 +101,8 @@ class JsonPointer
     else if hasObj
       api = (ptr, value) ->
         return switch arguments.length
-          when 1 then jp.set(obj, ptr, value)
-          when 0 then jp.get(obj, ptr)
+          when 2 then JsonPointer.set(obj, ptr, value)
+          when 1 then JsonPointer.get(obj, ptr)
           else null
 
       api.set = (ptr, value, override) -> obj = JsonPointer.set(obj, ptr, value, override)
@@ -112,8 +112,8 @@ class JsonPointer
     else if hasPtr
       api = (obj, value) ->
         return switch arguments.length
-          when 1 then jp.set(obj, ptr, value)
-          when 0 then jp.get(obj, ptr)
+          when 2 then JsonPointer.set(obj, ptr, value)
+          when 1 then JsonPointer.get(obj, ptr)
           else null
 
       api.set = (obj, value, override) -> JsonPointer.set(obj, ptr, value, override)
@@ -134,11 +134,11 @@ class JsonPointer
 
       if {}.hasOwnProperty.call(override, 'pointer')
         o.pointer = override.pointer
-      else if hasObj
+      else if hasPtr
         o.pointer = ptr
 
       if {}.hasOwnProperty.call(override, 'options')
-        o.options = merge(override.options)
+        o.options = mergeOptions(override.options)
       else if hasObj
         o.options = opt
 

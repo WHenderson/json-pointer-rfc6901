@@ -5,6 +5,7 @@ suite('coverage', () ->
 
   setup(() ->
     jp = require('../dist/json-pointer.coffee')
+    #jp = require('../index')
   )
 
   suite('escape', () ->
@@ -395,6 +396,261 @@ suite('coverage', () ->
 
     test('invalid', () ->
       assert(jp() == null, 'expected null')
+    )
+  )
+
+  suite('bind', () ->
+
+    clone = (x) -> JSON.parse(JSON.stringify(x))
+
+    for bindObject in [ true, false ]
+      do (bindObject) ->
+        suite("object #{if bindObject then 'bound' else 'unbound'}", () ->
+          for bindPointer in [ true, false ]
+            for has in [ true, false ]
+              do (bindPointer, has) ->
+                suite("#{if has then 'has' else 'has not'} pointer #{if bindPointer then 'bound' else 'unbound'}", () ->
+                  object = { a: 1 }
+                  pointer = if has then '/a' else '/b'
+
+                  binding = (options) ->
+                    b = {}
+                    if bindObject
+                      b.object = clone(object)
+                    if bindPointer
+                      b.pointer = pointer
+                    if options?
+                      b.options = options
+                    return b
+
+                  boundArgs = () ->
+                    args = []
+                    if not bindObject
+                      args.push(clone(object))
+                    if not bindPointer
+                      args.push(pointer)
+                    return args
+
+                  unboundArgs = () ->
+                    args = [clone(object), pointer]
+
+                  suite('no options', () ->
+                    test('has', () ->
+                      assert.deepEqual(
+                        jp.smartBind(binding()).has.apply(null, boundArgs())
+                        jp.has.apply(null, unboundArgs())
+                        'incorrect result'
+                      )
+                    )
+
+                    test('get', () ->
+                      assert.deepEqual(
+                        jp.smartBind(binding()).get.apply(null, boundArgs())
+                        jp.get.apply(null, unboundArgs())
+                        'incorrect result'
+                      )
+                    )
+
+                    test('set', () ->
+                      assert.deepEqual(
+                        jp.smartBind(binding()).set.apply(null, boundArgs().concat(['set']))
+                        jp.set.apply(null, unboundArgs().concat(['set']))
+                        'incorrect result'
+                      )
+                    )
+
+                    test('del', () ->
+                      assert.deepEqual(
+                        jp.smartBind(binding()).del.apply(null, boundArgs())
+                        jp.del.apply(null, unboundArgs())
+                        'incorrect result'
+                      )
+                    )
+
+                    test('simple get', () ->
+                      assert.deepEqual(
+                        jp.smartBind(binding()).apply(null, boundArgs())
+                        jp.apply(null, unboundArgs())
+                        'incorrect result'
+                      )
+                    )
+
+                    test('simple set', () ->
+                      assert.deepEqual(
+                        jp.smartBind(binding()).apply(null, boundArgs().concat(['set']))
+                        jp.apply(null, unboundArgs().concat(['set']))
+                        'incorrect result'
+                      )
+                    )
+
+                    test('simple invalid', () ->
+                      assert.deepEqual(
+                        jp.smartBind(binding()).call(null, 1, 2, 3, 4)
+                        jp.call(null, 1, 2, 3, 4)
+                        'incorrect result'
+                      )
+                    )
+                  )
+
+                  suite('options', () ->
+                    options = {}
+
+                    test('has', () ->
+                      assert.deepEqual(
+                        jp.smartBind(binding(options)).has.apply(null, boundArgs())
+                        jp.has.apply(null, unboundArgs().concat([options]))
+                        'incorrect result'
+                      )
+                    )
+
+                    test('get', () ->
+                      assert.deepEqual(
+                        jp.smartBind(binding(options)).get.apply(null, boundArgs())
+                        jp.get.apply(null, unboundArgs().concat([options]))
+                        'incorrect result'
+                      )
+                    )
+
+                    test('set', () ->
+                      assert.deepEqual(
+                        jp.smartBind(binding(options)).set.apply(null, boundArgs().concat(['set']))
+                        jp.set.apply(null, unboundArgs().concat(['set', options]))
+                        'incorrect result'
+                      )
+                    )
+
+                    test('del', () ->
+                      assert.deepEqual(
+                        jp.smartBind(binding(options)).del.apply(null, boundArgs())
+                        jp.del.apply(null, unboundArgs().concat([options]))
+                        'incorrect result'
+                      )
+                    )
+
+                    test('simple get', () ->
+                      assert.deepEqual(
+                        jp.smartBind(binding(options)).apply(null, boundArgs())
+                        jp.apply(null, unboundArgs())
+                        'incorrect result'
+                      )
+                    )
+
+                    test('simple set', () ->
+                      assert.deepEqual(
+                        jp.smartBind(binding(options)).apply(null, boundArgs().concat(['set']))
+                        jp.apply(null, unboundArgs().concat(['set']))
+                        'incorrect result'
+                      )
+                    )
+
+                    test('simple invalid', () ->
+                      assert.deepEqual(
+                        jp.smartBind(binding(options)).call(null, 1, 2, 3, 4)
+                        jp.call(null, 1, 2, 3, 4)
+                        'incorrect result'
+                      )
+                    )
+
+                    if not has
+                      test('get error not found', () ->
+                        options2 = { getNotFound: jp.errorNotFound }
+
+                        exBound = null
+                        exUnbound = null
+
+                        try
+                          jp.smartBind(binding(options2)).get.apply(null, boundArgs())
+                        catch ex
+                          if not ex instanceof jp.JsonPointerError
+                            throw ex
+                          exBound = ex
+
+                        try
+                          jp.get.apply(null, unboundArgs().concat([options2]))
+                        catch ex
+                          if not ex instanceof jp.JsonPointerError
+                            throw ex
+                          exUnbound = ex
+
+                        assert.deepEqual(
+                          exBound?
+                          exUnbound?
+                          'unmatched exceptions'
+                        )
+                        assert.deepEqual(
+                          exBound.name
+                          exUnbound.name
+                          'unmatched exceptions'
+                        )
+                        assert.deepEqual(
+                          exBound.message
+                          exUnbound.message
+                          'unmatched exceptions'
+                        )
+                      )
+                  )
+                )
+        )
+
+    suite('rebind', () ->
+      test('all, all', () ->
+        assert.deepEqual(
+          jp.smartBind({ object: { a: 1 }, pointer: '/a', options: {} }).smartBind({ object: { b: 1 }, pointer: '/a', options: {} })()
+          jp.get({ b: 1 }, '/a', {})
+          'invalid result'
+        )
+      )
+      test('all, obj', () ->
+        assert.deepEqual(
+          jp.smartBind({ object: { a: 1 }, pointer: '/a', options: {} }).smartBind({ object: { b: 1 } })()
+          jp.get({ b: 1 }, '/a', {})
+          'invalid result'
+        )
+      )
+      test('all, ptr', () ->
+        assert.deepEqual(
+          jp.smartBind({ object: { a: 1 }, pointer: '/b', options: {} }).smartBind({ pointer: '/a' })()
+          jp.get({ a: 1 }, '/a', {})
+          'invalid result'
+        )
+      )
+      test('all, opt', () ->
+        assert.deepEqual(
+          jp.smartBind({ object: { a: 1 }, pointer: '/a', options: {} }).smartBind({ options: {} })()
+          jp.get({ a: 1 }, '/a', {})
+          'invalid result'
+        )
+      )
+
+      test('no obj, no obj', () ->
+        assert.deepEqual(
+          jp.smartBind({ pointer: '/a', options: {} }).smartBind({ pointer: '/b' })({ b: 1 })
+          jp.get({ b: 1 }, '/b', {})
+          'invalid result'
+        )
+      )
+      test('no ptr, no ptr', () ->
+        assert.deepEqual(
+          jp.smartBind({ object: { a: 1 }, options: {} }).smartBind({ object: { b: 1 } })('/b')
+          jp.get({ b: 1 }, '/b', {})
+          'invalid result'
+        )
+      )
+      test('no opt, no opt', () ->
+        assert.deepEqual(
+          jp.smartBind({ object: { a: 1 }, pointer: '/b' }).smartBind({ object: { b: 1 } })()
+          jp.get({ b: 1 }, '/b', {})
+          'invalid result'
+        )
+      )
+
+      test('opt, simple obj', () ->
+        assert.deepEqual(
+          jp.smartBind({ options: {} })({ b: 1 })('/b')
+          jp.get({ b: 1 }, '/b', {})
+          'invalid result'
+        )
+      )
     )
   )
 )
