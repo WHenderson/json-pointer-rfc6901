@@ -20,6 +20,7 @@
     "chai": "^3.0.0",
     "coffee-coverage": "^0.6.2",
     "coffee-script": "^1.9.3",
+    "coveralls": "^2.11.4",
     "cson": "^3.0.1",
     "gulp": "^3.9.0",
     "gulp-clean": "^0.3.1",
