@@ -14,6 +14,14 @@
     "rfc6901",
     "fragment"
   ],
+  "bugs": {
+    "url": "https://github.com/WHenderson/json-pointer-rfc6901/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WHenderson/json-pointer-rfc6901.git"
+  },
+  "homepage": "https://github.com/WHenderson/json-pointer-rfc6901#readme",
   "author": "WHenderson <whenderson.github@gmail.com>",
   "license": "Apache-2.0",
   "devDependencies": {
