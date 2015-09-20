@@ -8,3 +8,6 @@ console.log('result:', pointer.escape('~'));
 
 console.log('result:', pointer.escape('/'));
 // result: ~1
+
+console.log('result:', pointer.escapeFragment('a b'));
+// result: a%20b
