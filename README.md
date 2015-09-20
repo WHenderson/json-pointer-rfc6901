@@ -127,6 +127,16 @@ console.log('result:', pointer.escape('/'));
 // result: ~1
 ```
 
+### [.escapeFragment(str) -> str](examples/escape.js)
+Escapes the given path fragment segment as described by RFC6901.
+
+Notably, `'~'`'s are replaced with `'~0'` and `'/'`'s are replaced with `'~1'` and finally the string is URI encoded.
+
+```js
+console.log('result:', pointer.escapeFragment('a b'));
+// result: a%20b
+```
+
 ### [.unescape(str) -> str](examples/escape.js)
 Un-Escapes the given path segment, reversing the actions of `.escape`
 
@@ -143,26 +153,62 @@ console.log('result:', pointer.unescape('~1'));
 // result: /
 ```
 
+### [.unescapeFragment(str) -> str](examples/escape.js)
+Un-Escapes the given path fragment segment, reversing the actions of `.escapeFragment`.
+
+Notably, the string is URI decoded and then `'~1'`'s are replaced with `'/'` and `'~0'`'s are replaced with `'~'`.
+
+```js
+console.log('result:', pointer.unescapeFragment('a%20b'));
+// result: a b
+```
+
+### [.isPointer(str) -> Boolean](examples/isPointer.js')
+Returns true iff `str` is a valid json pointer value
+
+```js
+console.log('result:', pointer.isPointer('/a'));
+// result: true
+```
+
+### [.isFragment(str) -> Boolean](examples/isFragment.js')
+Returns true iff `str` is a valid json fragment pointer value
+
+```js
+console.log('result:', pointer.isFragment('#/'));
+// result: true
+```
+
 ### [.parse(str) -> Array](examples/parse.js)
-Parses a json-pointer, as desribed by RFC901, into an array of path segments.
+Parses a json-pointer or json fragment pointer, as described by RFC901, into an array of path segments.
 
 ```js
 console.log('result:', pointer.parse('/abc'));
 // result: [ 'abc' ]
 
-console.log('result:', pointer.parse('/~0/~1/abc'));
-// result: [ '~', '/', 'abc' ]
+console.log('result:', pointer.parse('#/abc'));
+// result: [ 'abc' ]
+```
 
-console.log('result:', pointer.parse('/'));
-// result: [ '' ]
+### [.parsePointer(str) -> Array](examples/parse.js)
+Parses a json-pointer, as described by RFC901, into an array of path segments.
 
-console.log('result:', pointer.parse(''));
-// result: []
+```js
+console.log('result:', pointer.parsePointer('/abc'));
+// result: [ 'abc' ]
+```
+
+### [.parseFragment(str) -> Array](examples/parse.js)
+Parses a json-pointer or json fragment pointer, as described by RFC901, into an array of path segments.
+
+```js
+console.log('result:', pointer.parseFragment('#/abc'));
+// result: [ 'abc' ]
 ```
 
 ### [.compile(array) -> str](examples/compile.js)
-Converts an array of path segments into a json path.
-This method is the reverse of `.parse`
+Converts an array of path segments into a json pointer.
+This method is the reverse of `.parsePointer`
 
 ```js
 console.log('result:', pointer.compile([ 'abc' ]));
@@ -176,6 +222,24 @@ console.log('result:', pointer.compile([ '' ]));
 
 console.log('result:', pointer.compile([]));
 // result:
+```
+
+### [.compilePointer(array) -> str](examples/compile.js)
+Converts an array of path segments into a json pointer.
+This method is the reverse of `.parsePointer`
+
+```js
+console.log('result:', pointer.compilePointer([ 'abc' ]));
+// result: /abc
+```
+
+### [.compileFragment(array) -> str](examples/compile.js)
+Converts an array of path segments into a json pointer.
+This method is the reverse of `.compileFragment`
+
+```js
+console.log('result:', pointer.compileFragment([ 'abc' ]));
+// result: #/abc
 ```
 
 ### [pointer(object, [pointer, [value]]) -> pointer/value/object](examples/simple.js)
@@ -223,6 +287,18 @@ console.log('result:', pointer.smartBind({ pointer: '/a' }).get(obj));
 console.log('result:', pointer.smartBind({ object: obj }).smartBind({ pointer: '/a' }).get());
 // result: 1
 ```
+
+#### [bound.pointer(str) -> strings](examples/smartBind.js)
+get/set bound pointer value
+
+#### [bound.fragment(str) -> strings](examples/smartBind.js)
+get/set bound pointer value as fragment
+
+#### [bound.object(str) -> strings](examples/smartBind.js)
+get/set bound object
+
+#### [bound.options(str) -> strings](examples/smartBind.js)
+get/set bound options
 
 ### [.hasJsonProp(object, key) -> Boolean](examples/options.js)
 Returns true iff `obj` contains `key` and `obj` is either an Array or an Object.

@@ -166,12 +166,28 @@ class JsonPointer
       return JsonPointer.smartBind(o)
 
     if hasPtr
+      ###
+      # get/set bound pointer value
+      #
+      # Only available when pointer has been bound
+      #
+      # @param {string} value
+      # @returns string[] segments
+      ###
       api.pointer = (value) ->
         if arguments.length == 0
           return JsonPointer.compilePointer(ptr)
         else
           return ptr = JsonPointer.parsePointer(value)
 
+      ###
+      # get/set bound pointer value as fragment
+      #
+      # Only available when pointer has been bound
+      #
+      # @param {string} value
+      # @returns string[] segments
+      ###
       api.fragment = (value) ->
         if arguments.length == 0
           return JsonPointer.compileFragment(ptr)
@@ -179,6 +195,14 @@ class JsonPointer
           return ptr = JsonPointer.parseFragment(value)
 
     if hasObj
+      ###
+      # get/set bound object
+      #
+      # Only available when object has been bound
+      #
+      # @param {*} value
+      # @returns {*} bound object
+      ###
       api.object = (value) ->
         if arguments.length == 0
           return obj
@@ -186,6 +210,14 @@ class JsonPointer
           return obj = value
 
     if hasOpt
+      ###
+      # get/set bound options
+      #
+      # Only available when options has been bound
+      #
+      # @param {*} value
+      # @returns {*} bound options
+      ###
       api.options = (value) ->
         if arguments.length == 0
           return opt
@@ -271,7 +303,7 @@ class JsonPointer
         return false
 
   ###
-  # Parses a json-pointer or json fragment pointer, as desribed by RFC901, into an array of path segments.
+  # Parses a json-pointer or json fragment pointer, as described by RFC901, into an array of path segments.
   #
   # @throws {JsonPointerError} for invalid json-pointers.
   #
@@ -292,7 +324,7 @@ class JsonPointer
         throw new JsonPointerError("Invalid JSON pointer: #{str}")
 
   ###
-  # Parses a json-pointer, as desribed by RFC901, into an array of path segments.
+  # Parses a json-pointer, as described by RFC901, into an array of path segments.
   #
   # @throws {JsonPointerError} for invalid json-pointers.
   #
@@ -306,7 +338,7 @@ class JsonPointer
       else throw new JsonPointerError("Invalid JSON pointer: #{str}")
 
   ###
-  # Parses a json fragment pointer, as desribed by RFC901, into an array of path segments.
+  # Parses a json fragment pointer, as described by RFC901, into an array of path segments.
   #
   # @throws {JsonPointerError} for invalid json-pointers.
   #
