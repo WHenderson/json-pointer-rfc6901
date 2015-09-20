@@ -211,6 +211,14 @@ class JsonPointer
   @escape: (segment) ->
     segment.replace(/~/g, '~0').replace(/\//g, '~1')
 
+  ###
+  # Escapes the given path fragment segment as described by RFC6901.
+  #
+  # Notably, `'~'`'s are replaced with `'~0'` and `'/'`'s are replaced with `'~1'` and finally the string is URI encoded.
+  #
+  # @param {string} segment
+  # @returns {string}
+  ###
   @escapeFragment: (segment) ->
     encodeURIComponent(JsonPointer.escape(segment))
 
@@ -225,9 +233,23 @@ class JsonPointer
   @unescape: (segment) ->
     segment.replace(/~1/g, '/').replace(/~0/g, '~')
 
+  ###
+  # Un-Escapes the given path fragment segment, reversing the actions of `.escapeFragment`.
+  #
+  # Notably, the string is URI decoded and then `'~1'`'s are replaced with `'/'` and `'~0'`'s are replaced with `'~'`.
+  #
+  # @param {string} segment
+  # @returns {string}
+  ###
   @unescapeFragment: (segment) ->
     JsonPointer.unescape(decodeURIComponent(segment))
 
+  ###
+  # Returns true iff `str` is a valid json pointer value
+  #
+  # @param {string} str
+  # @returns {Boolean}
+  ###
   @isPointer: (str) ->
     switch str.charAt(0)
       when '' then return true
@@ -235,6 +257,12 @@ class JsonPointer
       else
         return false
 
+  ###
+  # Returns true iff `str` is a valid json fragment pointer value
+  #
+  # @param {string} str
+  # @returns {Boolean}
+  ###
   @isFragment: (str) ->
     switch str.substring(0, 2)
       when '#' then return true
@@ -243,7 +271,7 @@ class JsonPointer
         return false
 
   ###
-  # Parses a json-pointer, as desribed by RFC901, into an array of path segments.
+  # Parses a json-pointer or json fragment pointer, as desribed by RFC901, into an array of path segments.
   #
   # @throws {JsonPointerError} for invalid json-pointers.
   #
@@ -263,12 +291,28 @@ class JsonPointer
       else
         throw new JsonPointerError("Invalid JSON pointer: #{str}")
 
+  ###
+  # Parses a json-pointer, as desribed by RFC901, into an array of path segments.
+  #
+  # @throws {JsonPointerError} for invalid json-pointers.
+  #
+  # @param {string} str
+  # @returns {string[]}
+  ###
   @parsePointer: (str) ->
     switch str.charAt(0)
       when '' then return []
       when '/' then return str.substring(1).split('/').map(JsonPointer.unescape)
       else throw new JsonPointerError("Invalid JSON pointer: #{str}")
 
+  ###
+  # Parses a json fragment pointer, as desribed by RFC901, into an array of path segments.
+  #
+  # @throws {JsonPointerError} for invalid json-pointers.
+  #
+  # @param {string} str
+  # @returns {string[]}
+  ###
   @parseFragment: (str) ->
     switch str.substring(0, 2)
       when '#' then return []
@@ -277,8 +321,8 @@ class JsonPointer
         throw new JsonPointerError("Invalid JSON fragment pointer: #{str}")
 
   ###
-  # Converts an array of path segments into a json path.
-  # This method is the reverse of `.parse`.
+  # Converts an array of path segments into a json pointer.
+  # This method is the reverse of `.parsePointer`.
   #
   # @param {string[]} segments
   # @returns {string}
@@ -286,9 +330,23 @@ class JsonPointer
   @compile: (segments) ->
     segments.map((segment) -> '/' + JsonPointer.escape(segment)).join('')
 
+  ###
+  # Converts an array of path segments into a json pointer.
+  # This method is the reverse of `.parsePointer`.
+  #
+  # @param {string[]} segments
+  # @returns {string}
+  ###
   @compilePointer: (segments) ->
     segments.map((segment) -> '/' + JsonPointer.escape(segment)).join('')
 
+  ###
+  # Converts an array of path segments into a json fragment pointer.
+  # This method is the reverse of `.parseFragment`.
+  #
+  # @param {string[]} segments
+  # @returns {string}
+  ###
   @compileFragment: (segments) ->
     '#' + segments.map((segment) -> '/' + JsonPointer.escapeFragment(segment)).join('')
 
