@@ -34,7 +34,10 @@ class JsonPointer
   # @param {Object} bindings.options
   # @returns {JsonPointer}
   ###
-  @smartBind: ({ object: obj, pointer: ptr, options: opt }) ->
+  @smartBind: ({ object: obj, pointer: ptr, fragment: frag, options: opt }) ->
+    # fragment overrides pointer
+    ptr = frag ? ptr
+
     # What are binding?
     hasObj = obj != undefined
     hasPtr = ptr?
@@ -162,6 +165,33 @@ class JsonPointer
 
       return JsonPointer.smartBind(o)
 
+    if hasPtr
+      api.pointer = (value) ->
+        if arguments.length == 0
+          return JsonPointer.compilePointer(ptr)
+        else
+          return ptr = JsonPointer.parsePointer(value)
+
+      api.fragment = (value) ->
+        if arguments.length == 0
+          return JsonPointer.compileFragment(ptr)
+        else
+          return ptr = JsonPointer.parseFragment(value)
+
+    if hasObj
+      api.object = (value) ->
+        if arguments.length == 0
+          return obj
+        else
+          return obj = value
+
+    if hasOpt
+      api.options = (value) ->
+        if arguments.length == 0
+          return opt
+        else
+          return opt = value
+
     # copy the remaining methods which do not need binding
     for own key, val of JsonPointer
       if not {}.hasOwnProperty.call(api, key)
@@ -181,6 +211,9 @@ class JsonPointer
   @escape: (segment) ->
     segment.replace(/~/g, '~0').replace(/\//g, '~1')
 
+  @escapeFragment: (segment) ->
+    encodeURIComponent(JsonPointer.escape(segment))
+
   ###
   # Un-Escapes the given path segment, reversing the actions of `.escape`.
   #
@@ -192,6 +225,23 @@ class JsonPointer
   @unescape: (segment) ->
     segment.replace(/~1/g, '/').replace(/~0/g, '~')
 
+  @unescapeFragment: (segment) ->
+    JsonPointer.unescape(decodeURIComponent(segment))
+
+  @isPointer: (str) ->
+    switch str.charAt(0)
+      when '' then return true
+      when '/' then return true
+      else
+        return false
+
+  @isFragment: (str) ->
+    switch str.substring(0, 2)
+      when '#' then return true
+      when '#/' then return true
+      else
+        return false
+
   ###
   # Parses a json-pointer, as desribed by RFC901, into an array of path segments.
   #
@@ -201,13 +251,30 @@ class JsonPointer
   # @returns {string[]}
   ###
   @parse: (str) ->
-    if str == ''
-      return []
+    switch str.charAt(0)
+      when '' then return []
+      when '/' then return str.substring(1).split('/').map(JsonPointer.unescape)
+      when '#'
+        switch str.charAt(1)
+          when '' then return []
+          when '/' then return str.substring(2).split('/').map(JsonPointer.unescapeFragment)
+          else
+            throw new JsonPointerError("Invalid JSON fragment pointer: #{str}")
+      else
+        throw new JsonPointerError("Invalid JSON pointer: #{str}")
 
-    if str.charAt(0) != '/'
-      throw new JsonPointerError("Invalid JSON pointer: #{str}")
+  @parsePointer: (str) ->
+    switch str.charAt(0)
+      when '' then return []
+      when '/' then return str.substring(1).split('/').map(JsonPointer.unescape)
+      else throw new JsonPointerError("Invalid JSON pointer: #{str}")
 
-    return str.substring(1).split('/').map(JsonPointer.unescape)
+  @parseFragment: (str) ->
+    switch str.substring(0, 2)
+      when '#' then return []
+      when '#/' then return str.substring(2).split('/').map(JsonPointer.unescapeFragment)
+      else
+        throw new JsonPointerError("Invalid JSON fragment pointer: #{str}")
 
   ###
   # Converts an array of path segments into a json path.
@@ -218,6 +285,12 @@ class JsonPointer
   ###
   @compile: (segments) ->
     segments.map((segment) -> '/' + JsonPointer.escape(segment)).join('')
+
+  @compilePointer: (segments) ->
+    segments.map((segment) -> '/' + JsonPointer.escape(segment)).join('')
+
+  @compileFragment: (segments) ->
+    '#' + segments.map((segment) -> '/' + JsonPointer.escapeFragment(segment)).join('')
 
   ###
   # Callback used to determine if an object contains a given property.

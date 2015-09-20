@@ -44,6 +44,16 @@ suite('coverage', () ->
     )
   )
 
+  suite('escapeFragment', () ->
+    test('mixed', () ->
+      assert.deepEqual(
+        jp.escapeFragment('~/ %\"\'')
+        '~0~1%20%25%22\''
+        'incorrect escaping'
+      )
+    )
+  )
+
   suite('unescape', () ->
     test('none', () ->
       assert.deepEqual(
@@ -80,30 +90,127 @@ suite('coverage', () ->
     )
   )
 
-  suite('parse', () ->
-    test('empty', () ->
+  suite('unescapeFragment', () ->
+    test('mixed', () ->
       assert.deepEqual(
-        jp.parse('')
-        []
-        'incorrect parse result'
+        jp.unescapeFragment('~0%7E%7e~1%2F%2f%20%25%22')
+        '~~~/// %\"'
+        'incorrect escaping'
       )
     )
+  )
 
-    test('invalid', () ->
-      try
-        jp.parse('a')
-      catch ex
+  suite('parse', () ->
+    suite('pointer', () ->
+      test('empty', () ->
+        assert.deepEqual(
+          jp.parse('')
+          []
+          'incorrect parse result'
+        )
+      )
+
+      test('invalid', () ->
+        error = null
+        try
+          jp.parse('a')
+        catch ex
+          error = ex
+
         assert(ex instanceof jp.JsonPointerError, 'incorrect error type')
         assert.deepEqual(
           ex.message
           'Invalid JSON pointer: a'
           'incorrect error message'
         )
+      )
+
+      test('simple', () ->
+        assert.deepEqual(
+          jp.parse('/a/b/')
+          ['a','b','']
+          'incorrect parse result'
+        )
+      )
+
+      test('escaped', () ->
+        assert.deepEqual(
+          jp.parse('/~0/~1')
+          ['~','/']
+          'incorrect parse result'
+        )
+      )
+    )
+
+    suite('fragment', () ->
+      test('empty', () ->
+        assert.deepEqual(
+          jp.parse('#')
+          []
+          'incorrect parse result'
+        )
+      )
+
+      test('invalid', () ->
+        error = null
+        try
+          jp.parse('#a')
+        catch ex
+          error = ex
+
+        assert(ex instanceof jp.JsonPointerError, 'incorrect error type')
+        assert.deepEqual(
+          ex.message
+          'Invalid JSON fragment pointer: #a'
+          'incorrect error message'
+        )
+      )
+
+      test('simple', () ->
+        assert.deepEqual(
+          jp.parse('#/a/b/')
+          ['a','b','']
+          'incorrect parse result'
+        )
+      )
+
+      test('escaped', () ->
+        assert.deepEqual(
+          jp.parse('#/~0%20/~1%20')
+          ['~ ','/ ']
+          'incorrect parse result'
+        )
+      )
+    )
+  )
+
+  suite('parsePointer', () ->
+    test('empty', () ->
+      assert.deepEqual(
+        jp.parsePointer('')
+        []
+        'incorrect parse result'
+      )
+    )
+
+    test('invalid', () ->
+      error = null
+      try
+        jp.parsePointer('a')
+      catch ex
+        error = ex
+
+      assert(ex instanceof jp.JsonPointerError, 'incorrect error type')
+      assert.deepEqual(
+        ex.message
+        'Invalid JSON pointer: a'
+        'incorrect error message'
+      )
     )
 
     test('simple', () ->
       assert.deepEqual(
-        jp.parse('/a/b/')
+        jp.parsePointer('/a/b/')
         ['a','b','']
         'incorrect parse result'
       )
@@ -111,10 +218,81 @@ suite('coverage', () ->
 
     test('escaped', () ->
       assert.deepEqual(
-        jp.parse('/~0/~1')
+        jp.parsePointer('/~0/~1')
         ['~','/']
         'incorrect parse result'
       )
+    )
+  )
+
+  suite('parseFragment', () ->
+    test('empty', () ->
+      assert.deepEqual(
+        jp.parseFragment('#')
+        []
+        'incorrect parse result'
+      )
+    )
+
+    test('invalid', () ->
+      error = null
+      try
+        jp.parseFragment('#a')
+      catch ex
+        error = ex
+
+      assert(ex instanceof jp.JsonPointerError, 'incorrect error type')
+      assert.deepEqual(
+        ex.message
+        'Invalid JSON fragment pointer: #a'
+        'incorrect error message'
+      )
+    )
+
+    test('simple', () ->
+      assert.deepEqual(
+        jp.parseFragment('#/a/b/')
+        ['a','b','']
+        'incorrect parse result'
+      )
+    )
+
+    test('escaped', () ->
+      assert.deepEqual(
+        jp.parseFragment('#/~0%20/~1%20')
+        ['~ ','/ ']
+        'incorrect parse result'
+      )
+    )
+  )
+
+  suite('isPointer', () ->
+    test('empty', () ->
+      assert(jp.isPointer(''), 'invalid result')
+    )
+    test('valid', () ->
+      assert(jp.isPointer('/'), 'invalid result')
+    )
+    test('invalid', () ->
+      assert(not jp.isPointer('a'), 'invalid result')
+    )
+  )
+
+  suite('isFragment', () ->
+    test('empty fragment', () ->
+      assert(jp.isFragment('#'), 'invalid result')
+    )
+    test('valid fragment pointer', () ->
+      assert(jp.isFragment('#/'), 'invalid result')
+    )
+    test('invalid (empty)', () ->
+      assert(not jp.isFragment(''), 'invalid result')
+    )
+    test('invalid (not a fragment)', () ->
+      assert(not jp.isFragment('a'), 'invalid result')
+    )
+    test('invalid (not a fragment pointer)', () ->
+      assert(not jp.isFragment('#a'), 'invalid result')
     )
   )
 
@@ -139,6 +317,58 @@ suite('coverage', () ->
       assert.deepEqual(
         jp.compile(['~','/'])
         '/~0/~1'
+        'incorrect compile result'
+      )
+    )
+  )
+
+  suite('compilePointer', () ->
+    test('empty', () ->
+      assert.deepEqual(
+        jp.compilePointer([])
+        ''
+        'incorrect compile result'
+      )
+    )
+
+    test('simple', () ->
+      assert.deepEqual(
+        jp.compilePointer(['a','b',''])
+        '/a/b/'
+        'incorrect compile result'
+      )
+    )
+
+    test('escape', () ->
+      assert.deepEqual(
+        jp.compilePointer(['~','/'])
+        '/~0/~1'
+        'incorrect compile result'
+      )
+    )
+  )
+
+  suite('compileFragment', () ->
+    test('empty', () ->
+      assert.deepEqual(
+        jp.compileFragment([])
+        '#'
+        'incorrect compile result'
+      )
+    )
+
+    test('simple', () ->
+      assert.deepEqual(
+        jp.compileFragment(['a','b',''])
+        '#/a/b/'
+        'incorrect compile result'
+      )
+    )
+
+    test('escape', () ->
+      assert.deepEqual(
+        jp.compileFragment(['~ ','/ '])
+        '#/~0%20/~1%20'
         'incorrect compile result'
       )
     )
@@ -650,6 +880,120 @@ suite('coverage', () ->
           jp.get({ b: 1 }, '/b', {})
           'invalid result'
         )
+      )
+    )
+  )
+
+  suite('bound meta data', () ->
+    test('object', () ->
+      p = jp.smartBind({ object: { a: 1 } })
+
+      assert.deepEqual(
+        p.object()
+        { a: 1 }
+        'incorrect meta data'
+      )
+
+      assert.deepEqual(
+        p.object({ b: 2 })
+        { b: 2 }
+        'incorrect assignment result'
+      )
+
+      assert.deepEqual(
+        p.object()
+        { b: 2 }
+        'incorrect meta data'
+      )
+
+      assert.deepEqual(
+        p('/b')
+        2
+        'incorrect result'
+      )
+    )
+
+    test('pointer', () ->
+      p = jp.smartBind({ pointer: '/a' })
+
+      assert.deepEqual(
+        p.pointer()
+        '/a'
+        'incorrect meta data'
+      )
+
+      assert.deepEqual(
+        p.pointer('/b')
+        ['b']
+        'incorrect assignment result'
+      )
+
+      assert.deepEqual(
+        p.pointer()
+        '/b'
+        'incorrect meta data'
+      )
+
+      assert.deepEqual(
+        p({ a: 1, b: 2 })
+        2
+        'incorrect result'
+      )
+    )
+
+    test('fragment', () ->
+      p = jp.smartBind({ fragment: '#/a' })
+
+      assert.deepEqual(
+        p.fragment()
+        '#/a'
+        'incorrect meta data'
+      )
+
+      assert.deepEqual(
+        p.fragment('#/b')
+        ['b']
+        'incorrect assignment result'
+      )
+
+      assert.deepEqual(
+        p.fragment()
+        '#/b'
+        'incorrect meta data'
+      )
+
+      assert.deepEqual(
+        p({ a: 1, b: 2 })
+        2
+        'incorrect result'
+      )
+    )
+
+    test('options', () ->
+      p = jp.smartBind({ options: { hasProp: jp.hasOwnProp }})
+
+      assert.deepEqual(
+        p.options()
+        { hasProp: jp.hasOwnProp }
+        'incorrect meta data'
+      )
+
+      assert.deepEqual(
+        p.options({ hasProp: jp.hasProp })
+        { hasProp: jp.hasProp }
+        'incorrect meta data'
+      )
+
+      assert.deepEqual(
+        p.options()
+        { hasProp: jp.hasProp }
+        'incorrect meta data'
+      )
+
+      assert.deepEqual(
+        p([], '/push')
+        [].push
+        'incorrect result'
       )
     )
   )
