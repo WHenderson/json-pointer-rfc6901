@@ -1,6 +1,6 @@
 {
   "name": "json-pointer-rfc6901",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "json-pointer implementation as per rfc6901",
   "main": "index.js",
   "scripts": {
