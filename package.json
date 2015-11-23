@@ -1,8 +1,13 @@
 {
   "name": "json-pointer-rfc6901",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "json-pointer implementation as per rfc6901",
   "main": "index.js",
+  "files": [
+    "index.js",
+    "dist",
+    "examples"
+  ],
   "scripts": {
     "test": "node_modules/.bin/gulp test",
     "_prepublish": "node_modules/.bin/gulp test"
