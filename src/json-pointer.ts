@@ -104,7 +104,7 @@ export function setProp(obj: JsonValue, key: string | number, val: JsonValue) : 
 
 export function delProp(obj: JsonValue, key: string | number) : void {
     if (Array.isArray(obj) && /^(?:0|[1-9][0-9]*)$/.test(`${key}`)) {
-        obj.splice(parseInt(key, 10), 1);
+        obj.splice(parseInt(`${key}`, 10), 1);
     }
     else {
         delete obj[key];
@@ -300,25 +300,7 @@ export interface ApiBoundOptions {
     del: (object: JsonValue, pointer: string | (string | number)[], options?: GetOptions) => JsonValue;
     has: (object: JsonValue, pointer: string | (string | number)[], options?: GetOptions) => boolean;
 
-    object: {
-        () : JsonValue;
-        (object: JsonValue, options?: Partial<AllOptions>) : ApiBoundObject;
-    }
-
-    pointer: {
-        (): string;
-        (pointer?: string | (string | number)[], options?: Partial<AllOptions>): ApiBoundPointer;
-    }
-
-    segments: {
-        () : (string | number)[];
-        (pointer?: string | (string | number)[], options?: Partial<AllOptions>) : ApiBoundPointer;
-    }
-
-    options: {
-        () : Partial<AllOptions>;
-        (options?: Partial<AllOptions>) : ApiBoundOptions;
-    }
+    options(options?: Partial<AllOptions>) : Partial<AllOptions>;
 
     smartBind: {
         (bind: { object: JsonValue, pointer: string | (string | number)[], options?: Partial<AllOptions> }) : ApiBoundObjectPointer;
@@ -340,25 +322,8 @@ export interface ApiBoundObject {
     del: (pointer: string | string[], options?: GetOptions) => JsonValue;
     has: (pointer: string | string[], options?: GetOptions) => boolean;
 
-    object: {
-        () : JsonValue;
-        (object: JsonValue, options?: Partial<AllOptions>) : ApiBoundObject;
-    }
-
-    pointer: {
-        () : string;
-        (pointer?: string | (string | number)[], options?: Partial<AllOptions>) : ApiBoundObjectPointer;
-    }
-
-    segments: {
-        () : (string | number)[];
-        (pointer?: string | (string | number)[], options?: Partial<AllOptions>) : ApiBoundObjectPointer;
-    }
-
-    options: {
-        () : Partial<AllOptions>;
-        (options?: Partial<AllOptions>) : ApiBoundObject;
-    }
+    object(object?: JsonValue) : JsonValue;
+    options(options?: Partial<AllOptions>) : Partial<AllOptions>;
 
     smartBind: {
         (bind: { object: JsonValue, pointer: string | (string | number)[], options?: Partial<AllOptions> }) : ApiBoundObjectPointer;
@@ -380,25 +345,9 @@ export interface ApiBoundPointer {
     del: (object: JsonValue, options?: GetOptions) => JsonValue;
     has: (object: JsonValue, options?: GetOptions) => boolean;
 
-    object: {
-        () : JsonValue;
-        (object: JsonValue, options?: Partial<AllOptions>) : ApiBoundObjectPointer;
-    }
-
-    pointer: {
-        () : string;
-        (pointer?: string | (string | number)[], options?: Partial<AllOptions>) : ApiBoundPointer;
-    }
-
-    segments: {
-        () : (string | number)[];
-        (pointer?: string | (string | number)[], options?: Partial<AllOptions>) : ApiBoundPointer;
-    }
-
-    options: {
-        () : Partial<AllOptions>;
-        (options?: Partial<AllOptions>) : ApiBoundPointer;
-    }
+    pointer(pointer?: string | (string | number)[]): string;
+    segments(pointer?: string | (string | number)[]) : (string | number)[];
+    options(options?: Partial<AllOptions>) : Partial<AllOptions>;
 
     smartBind: {
         (bind: { object: JsonValue, pointer: string | (string | number)[], options?: Partial<AllOptions> }) : ApiBoundObjectPointer;
@@ -420,25 +369,10 @@ export interface ApiBoundObjectPointer {
     del: (options?: GetOptions) => JsonValue;
     has: (options?: GetOptions) => boolean;
 
-    object: {
-        () : JsonValue,
-        (object: JsonValue, options?: Partial<AllOptions>) : ApiBoundObjectPointer
-    }
-
-    pointer: {
-        () : string;
-        (pointer?: string | (string | number)[], options?: Partial<AllOptions>) : ApiBoundObjectPointer;
-    }
-
-    segments: {
-        () : (string | number)[];
-        (pointer?: string | (string | number)[], options?: Partial<AllOptions>) : ApiBoundObjectPointer;
-    }
-
-    options: {
-        () : Partial<AllOptions>;
-        (options?: Partial<AllOptions>) : ApiBoundObjectPointer;
-    }
+    object(object?: JsonValue) : JsonValue;
+    pointer(pointer?: string | (string | number)[]): string;
+    segments(pointer?: string | (string | number)[]) : (string | number)[];
+    options(options?: Partial<AllOptions>) : Partial<AllOptions>;
 
     smartBind: {
         (bind: { object: JsonValue, pointer: string | (string | number)[], options?: Partial<AllOptions> }) : ApiBoundObjectPointer;
@@ -458,78 +392,69 @@ export function smartBind(bind: { options?: Partial<AllOptions> }) : ApiBoundOpt
 export function smartBind() : ApiBoundOptions;
 
 export function smartBind(bind?: { object?: JsonValue, pointer?: string | (string | number)[], options?: Partial<AllOptions> }) : ApiBoundOptions | ApiBoundObject | ApiBoundPointer | ApiBoundObjectPointer {
-    bind = bind || {};
-    let boundObject = bind.object;
-    let boundSegments = bind.pointer ? (typeof bind.pointer === 'string' ? parse(bind.pointer) : bind.pointer) : undefined;
-    let boundOptions = bind.options || {};
+    let bound : {
+        object?: JsonValue,
+        pointer?: (string | number)[],
+        options: Partial<AllOptions>
+    } = {
+        options: (bind && bind.options) || {}
+    }
+    if (bind && 'pointer' in bind)
+        bound.pointer = typeof bind.pointer === 'string' ? parse(bind.pointer) : bind.pointer;
+    if (bind && 'object' in bind)
+        bound.object = bind.object;
 
-
-    if ('object' in bind && 'pointer' in bind) {
+    if ('object' in bound && 'pointer' in bound) {
         function _smartBind(bind: { object: JsonValue, pointer: string | (string | number)[], options?: Partial<AllOptions> }) : ApiBoundObjectPointer;
         function _smartBind(bind: { object: JsonValue, options?: Partial<AllOptions> }) : ApiBoundObjectPointer;
         function _smartBind(bind: { pointer: string | (string | number)[], options?: Partial<AllOptions> }) : ApiBoundObjectPointer;
         function _smartBind(bind: { options?: Partial<AllOptions> }) : ApiBoundObjectPointer;
         function _smartBind() : ApiBoundObjectPointer;
         function _smartBind(bind?: { object?: JsonValue, pointer?: string | (string | number)[], options?: Partial<AllOptions> }) : ApiBoundObjectPointer {
-            return smartBind(Object.assign({}, { object: boundObject, pointer: boundSegments, options: boundOptions }, bind));
-        }
-
-        function object() : JsonValue;
-        function object(object: JsonValue, options?: Partial<AllOptions>) : ApiBoundObjectPointer;
-        function object(object?: JsonValue, options?: Partial<AllOptions>) : ApiBoundObjectPointer | JsonValue {
-            if (arguments.length === 0)
-                return boundObject;
-            return smartBind({ object, pointer: boundSegments, options: Object.assign({}, boundOptions, options)});
-        }
-
-        function pointer() : string;
-        function pointer(pointer: string | (string | number)[], options?: Partial<AllOptions>) : ApiBoundObjectPointer;
-        function pointer(pointer?: string | (string | number)[], options?: Partial<AllOptions>) : ApiBoundObjectPointer | string {
-            if (arguments.length === 0)
-                return compilePointer(boundSegments);
-            return smartBind({ object: boundObject, pointer, options: Object.assign({}, boundOptions, options)});
-        }
-
-        function segments() : (string | number)[];
-        function segments(pointer: string | (string | number)[], options?: Partial<AllOptions>) : ApiBoundObjectPointer;
-        function segments(pointer?: string | (string | number)[], options?: Partial<AllOptions>) : ApiBoundObjectPointer | (string | number)[] {
-            if (arguments.length === 0)
-                return boundSegments;
-            return smartBind({ object: boundObject, pointer, options: Object.assign({}, boundOptions, options)});
-        }
-
-        function options() : Partial<AllOptions>;
-        function options(options: Partial<AllOptions>) : ApiBoundObjectPointer;
-        function options(options?: Partial<AllOptions>) : ApiBoundObjectPointer | Partial<AllOptions> {
-            if (arguments.length === 0)
-                return boundOptions;
-            return smartBind({ object: boundObject, pointer: boundSegments, options: Object.assign({}, boundOptions, options)});
+            bind = bind || {};
+            return smartBind(Object.assign({}, { object: bound.object, pointer: bound.pointer }, bind, { options: Object.assign({}, bound.options, bind.options)}));
         }
 
         const api : ApiBoundObjectPointer = Object.assign(
             function (value?: JsonValue) {
                 switch (arguments.length) {
-                    case 1: return (boundObject = set(boundObject, boundSegments, value, boundOptions));
-                    case 0: return get(boundObject, boundSegments, boundOptions);
+                    case 1: return (bound.object = set(bound.object, bound.pointer, value, bound.options));
+                    case 0: return get(bound.object, bound.pointer, bound.options);
                 }
             },
             {
                 get(options?: GetOptions) : JsonValue {
-                    return get(boundObject, boundSegments, Object.assign({}, boundOptions, options));
+                    return get(bound.object, bound.pointer, Object.assign({}, bound.options, options));
                 },
                 set(val: JsonValue, options: SetOptions) : JsonValue {
-                    return (boundObject = set(boundObject, boundSegments, val, Object.assign({}, boundOptions, options)));
+                    return (bound.object = set(bound.object, bound.pointer, val, Object.assign({}, bound.options, options)));
                 },
                 del(options?: GetOptions) : JsonValue {
-                    return (boundObject = del(boundObject, boundSegments, Object.assign({}, boundOptions, options)));
+                    return (bound.object = del(bound.object, bound.pointer, Object.assign({}, bound.options, options)));
                 },
                 has(options?: GetOptions) : boolean {
-                    return has(boundObject, boundSegments, Object.assign({}, boundOptions, options));
+                    return has(bound.object, bound.pointer, Object.assign({}, bound.options, options));
                 },
-                object,
-                pointer,
-                segments,
-                options,
+                object(object?: JsonValue) : JsonValue {
+                    if (arguments.length === 0)
+                        return bound.object;
+                    return bound.object = object;
+                },
+                pointer(pointer?: string | (string | number)[]) : string {
+                    if (arguments.length === 0)
+                        return compilePointer(bound.pointer);
+                    return compilePointer(bound.pointer = (typeof pointer === 'string' ? parse(pointer) : pointer));
+                },
+                segments(pointer?: string | (string | number)[]) : (string | number)[] {
+                    if (arguments.length === 0)
+                        return bound.pointer;
+                    return bound.pointer = (typeof pointer === 'string' ? parse(pointer) : pointer);
+                },
+                options(options?: Partial<AllOptions>) : Partial<AllOptions> {
+                    if (arguments.length === 0)
+                        return bound.options;
+                    return bound.options = Object.assign({}, bound.options, options);
+                },
                 smartBind: _smartBind
             }
         );
@@ -542,66 +467,40 @@ export function smartBind(bind?: { object?: JsonValue, pointer?: string | (strin
         function _smartBind(bind: { options?: Partial<AllOptions> }) : ApiBoundObject;
         function _smartBind() : ApiBoundObject;
         function _smartBind(bind?: { object?: JsonValue, pointer?: string | (string | number)[], options?: Partial<AllOptions> }) : ApiBoundObjectPointer | ApiBoundObject {
-            return smartBind(Object.assign({}, { object: boundObject, options: boundOptions }, bind));
-        }
-
-        function object() : JsonValue;
-        function object(object: JsonValue, options?: Partial<AllOptions>) : ApiBoundObject;
-        function object(object?: JsonValue, options?: Partial<AllOptions>) : ApiBoundObject | JsonValue {
-            if (arguments.length === 0)
-                return boundObject;
-            return smartBind({ object, options: Object.assign({}, boundOptions, options)});
-        }
-
-        function pointer() : string;
-        function pointer(pointer: string | (string | number)[], options?: Partial<AllOptions>) : ApiBoundObjectPointer;
-        function pointer(pointer?: string | (string | number)[], options?: Partial<AllOptions>) : ApiBoundObjectPointer | string {
-            if (arguments.length === 0)
-                return compilePointer(boundSegments);
-            return smartBind({ object: boundObject, pointer, options: Object.assign({}, boundOptions, options)});
-        }
-
-        function segments() : (string | number)[];
-        function segments(pointer: string | (string | number)[], options?: Partial<AllOptions>) : ApiBoundObjectPointer;
-        function segments(pointer?: string | (string | number)[], options?: Partial<AllOptions>) : ApiBoundObjectPointer | (string | number)[] {
-            if (arguments.length === 0)
-                return boundSegments;
-            return smartBind({ object: boundObject, pointer, options: Object.assign({}, boundOptions, options)});
-        }
-
-        function options() : Partial<AllOptions>;
-        function options(options: Partial<AllOptions>) : ApiBoundObject;
-        function options(options?: Partial<AllOptions>) : ApiBoundObject | Partial<AllOptions> {
-            if (arguments.length === 0)
-                return boundOptions;
-            return smartBind({ object: boundObject, options: Object.assign({}, boundOptions, options)});
+            bind = bind || {};
+            return smartBind(Object.assign({}, { object: bound.object }, bind, { options: Object.assign({}, bound.options, bind.options)}));
         }
 
         const api : ApiBoundObject =  Object.assign(
             function (pointer: string | (string | number)[], value?: JsonValue) {
                 switch (arguments.length) {
-                    case 2: return (boundObject = set(boundObject, pointer, value, boundOptions));
-                    case 1: return get(boundObject, pointer, boundOptions);
+                    case 2: return (bound.object = set(bound.object, pointer, value, bound.options));
+                    case 1: return get(bound.object, pointer, bound.options);
                 }
             },
             {
                 get(pointer: string | (string | number)[], options?: GetOptions) : JsonValue {
-                    return get(boundObject, pointer, Object.assign({}, boundOptions, options));
+                    return get(bound.object, pointer, Object.assign({}, bound.options, options));
                 },
                 set(pointer: string | (string | number)[], val: JsonValue, options: SetOptions) : JsonValue {
-                    return (boundObject = set(boundObject, pointer, val, Object.assign({}, boundOptions, options)));
+                    return (bound.object = set(bound.object, pointer, val, Object.assign({}, bound.options, options)));
                 },
                 del(pointer: string | (string | number)[], options?: GetOptions) : JsonValue {
-                    return (boundObject = del(boundObject, pointer, Object.assign({}, boundOptions, options)));
+                    return (bound.object = del(bound.object, pointer, Object.assign({}, bound.options, options)));
                 },
                 has(pointer: string | (string | number)[], options?: GetOptions) : boolean {
-                    return has(boundObject, pointer, Object.assign({}, boundOptions, options));
+                    return has(bound.object, pointer, Object.assign({}, bound.options, options));
                 },
-
-                object,
-                pointer,
-                segments,
-                options,
+                object(object?: JsonValue) : JsonValue {
+                    if (arguments.length === 0)
+                        return bound.object;
+                    return bound.object = object;
+                },
+                options(options?: Partial<AllOptions>) : Partial<AllOptions> {
+                    if (arguments.length === 0)
+                        return bound.options;
+                    return bound.options = Object.assign({}, bound.options, options);
+                },
                 smartBind: _smartBind
             }
         );
@@ -615,66 +514,45 @@ export function smartBind(bind?: { object?: JsonValue, pointer?: string | (strin
         function _smartBind(bind: { options?: Partial<AllOptions> }) : ApiBoundPointer;
         function _smartBind() : ApiBoundPointer;
         function _smartBind(bind?: { object?: JsonValue, pointer?: string | (string | number)[], options?: Partial<AllOptions> }) : ApiBoundObjectPointer | ApiBoundPointer {
-            return smartBind(Object.assign({}, { pointer: boundSegments, options: boundOptions }, bind));
-        }
-
-        function object() : JsonValue;
-        function object(object: JsonValue, options?: Partial<AllOptions>) : ApiBoundObjectPointer;
-        function object(object?: JsonValue, options?: Partial<AllOptions>) : ApiBoundObjectPointer | JsonValue {
-            if (arguments.length === 0)
-                return boundObject;
-            return smartBind({ object, pointer: boundSegments, options: Object.assign({}, boundOptions, options)});
-        }
-
-        function pointer() : string;
-        function pointer(pointer: string | (string | number)[], options?: Partial<AllOptions>) : ApiBoundPointer;
-        function pointer(pointer?: string | (string | number)[], options?: Partial<AllOptions>) : ApiBoundPointer | string {
-            if (arguments.length === 0)
-                return compilePointer(boundSegments);
-            return smartBind({ pointer, options: Object.assign({}, boundOptions, options)});
-        }
-
-        function segments() : (string | number)[];
-        function segments(pointer: string | (string | number)[], options?: Partial<AllOptions>) : ApiBoundPointer;
-        function segments(pointer?: string | (string | number)[], options?: Partial<AllOptions>) : ApiBoundPointer | (string | number)[] {
-            if (arguments.length === 0)
-                return boundSegments;
-            return smartBind({ pointer, options: Object.assign({}, boundOptions, options)});
-        }
-
-        function options() : Partial<AllOptions>;
-        function options(options: Partial<AllOptions>) : ApiBoundPointer;
-        function options(options?: Partial<AllOptions>) : ApiBoundPointer | Partial<AllOptions> {
-            if (arguments.length === 0)
-                return boundOptions;
-            return smartBind({ pointer: boundSegments, options: Object.assign({}, boundOptions, options)});
+            bind = bind || {};
+            return smartBind(Object.assign({}, { pointer: bound.pointer }, bind, { options: Object.assign({}, bound.options, bind.options)}));
         }
 
         const api : ApiBoundPointer =  Object.assign(
             function (object: JsonValue, value?: JsonValue) {
                 switch (arguments.length) {
-                    case 2: return (object = set(object, boundSegments, value, boundOptions));
-                    case 1: return get(object, boundSegments, boundOptions);
+                    case 2: return (object = set(object, bound.pointer, value, bound.options));
+                    case 1: return get(object, bound.pointer, bound.options);
                 }
             },
             {
                 get(object: JsonValue, options?: GetOptions) : JsonValue {
-                    return get(object, boundSegments, Object.assign({}, boundOptions, options));
+                    return get(object, bound.pointer, Object.assign({}, bound.options, options));
                 },
                 set(object: JsonValue, val: JsonValue, options: SetOptions) : JsonValue {
-                    return (object = set(object, boundSegments, val, Object.assign({}, boundOptions, options)));
+                    return (object = set(object, bound.pointer, val, Object.assign({}, bound.options, options)));
                 },
                 del(object: JsonValue, options?: GetOptions) : JsonValue {
-                    return (object = del(object, boundSegments, Object.assign({}, boundOptions, options)));
+                    return (object = del(object, bound.pointer, Object.assign({}, bound.options, options)));
                 },
                 has(object: JsonValue, options?: GetOptions) : boolean {
-                    return has(object, boundSegments, Object.assign({}, boundOptions, options));
+                    return has(object, bound.pointer, Object.assign({}, bound.options, options));
                 },
-
-                object,
-                pointer,
-                segments,
-                options,
+                pointer(pointer?: string | (string | number)[]) : string {
+                    if (arguments.length === 0)
+                        return compilePointer(bound.pointer);
+                    return compilePointer(bound.pointer = (typeof pointer === 'string' ? parse(pointer) : pointer));
+                },
+                segments(pointer?: string | (string | number)[]) : (string | number)[] {
+                    if (arguments.length === 0)
+                        return bound.pointer;
+                    return bound.pointer = (typeof pointer === 'string' ? parse(pointer) : pointer);
+                },
+                options(options?: Partial<AllOptions>) : Partial<AllOptions> {
+                    if (arguments.length === 0)
+                        return bound.options;
+                    return bound.options = Object.assign({}, bound.options, options);
+                },
                 smartBind: _smartBind
             }
         );
@@ -688,39 +566,8 @@ export function smartBind(bind?: { object?: JsonValue, pointer?: string | (strin
         function _smartBind(bind: { options?: Partial<AllOptions> }) : ApiBoundOptions;
         function _smartBind() : ApiBoundOptions;
         function _smartBind(bind?: { object?: JsonValue, pointer?: string | (string | number)[], options?: Partial<AllOptions> }) : ApiBoundObjectPointer | ApiBoundObject | ApiBoundPointer | ApiBoundOptions {
-            return smartBind(Object.assign({}, { options: boundOptions }, bind));
-        }
-
-        function object() : JsonValue;
-        function object(object: JsonValue, options?: Partial<AllOptions>) : ApiBoundObject;
-        function object(object?: JsonValue, options?: Partial<AllOptions>) : ApiBoundObject | JsonValue {
-            if (arguments.length === 0)
-                return boundObject;
-            return smartBind({ object, options: Object.assign({}, boundOptions, options)});
-        }
-
-        function pointer() : string;
-        function pointer(pointer: string | (string | number)[], options?: Partial<AllOptions>) : ApiBoundPointer;
-        function pointer(pointer?: string | (string | number)[], options?: Partial<AllOptions>) : ApiBoundPointer | string {
-            if (arguments.length === 0)
-                return compilePointer(boundSegments);
-            return smartBind({ pointer, options: Object.assign({}, boundOptions, options)});
-        }
-
-        function segments() : (string | number)[];
-        function segments(pointer: string | (string | number)[], options?: Partial<AllOptions>) : ApiBoundPointer;
-        function segments(pointer?: string | (string | number)[], options?: Partial<AllOptions>) : ApiBoundPointer | (string | number)[] {
-            if (arguments.length === 0)
-                return boundSegments;
-            return smartBind({ pointer, options: Object.assign({}, boundOptions, options)});
-        }
-
-        function options() : Partial<AllOptions>;
-        function options(options: Partial<AllOptions>) : ApiBoundOptions;
-        function options(options?: Partial<AllOptions>) : ApiBoundOptions | Partial<AllOptions> {
-            if (arguments.length === 0)
-                return boundOptions;
-            return smartBind({ options: Object.assign({}, boundOptions, options)});
+            bind = bind || {};
+            return smartBind(Object.assign({}, bind, { options: Object.assign({}, bound.options, bind.options)}));
         }
 
         function api(object: JsonValue) : ApiBoundObject;
@@ -728,9 +575,9 @@ export function smartBind(bind?: { object?: JsonValue, pointer?: string | (strin
         function api(object: JsonValue, pointer: string | (string | number)[], value: JsonValue) : JsonValue;
         function api(object: JsonValue, pointer?: string | (string | number)[], value?: JsonValue) : JsonValue | ApiBoundObject {
             switch (arguments.length) {
-                case 3: return (object = set(object, pointer, value, boundOptions));
-                case 2: return get(object, pointer, boundOptions);
-                case 1: return smartBind({ object, options: boundOptions });
+                case 3: return (object = set(object, pointer, value, bound.options));
+                case 2: return get(object, pointer, bound.options);
+                case 1: return smartBind({ object, options: bound.options });
             }
         }
 
@@ -738,22 +585,22 @@ export function smartBind(bind?: { object?: JsonValue, pointer?: string | (strin
             api,
             {
                 get(object: JsonValue, pointer: string | (string | number)[], options?: GetOptions) : JsonValue {
-                    return get(object, pointer, Object.assign({}, boundOptions, options));
+                    return get(object, pointer, Object.assign({}, bound.options, options));
                 },
                 set(object: JsonValue, pointer: string | (string | number)[], val: JsonValue, options: SetOptions) : JsonValue {
-                    return (object = set(object, pointer, val, Object.assign({}, boundOptions, options)));
+                    return (object = set(object, pointer, val, Object.assign({}, bound.options, options)));
                 },
                 del(object: JsonValue, pointer: string | (string | number)[], options?: GetOptions) : JsonValue {
-                    return (object = del(object, pointer, Object.assign({}, boundOptions, options)));
+                    return (object = del(object, pointer, Object.assign({}, bound.options, options)));
                 },
                 has(object: JsonValue, pointer: string | (string | number)[], options?: GetOptions) : boolean {
-                    return has(object, pointer, Object.assign({}, boundOptions, options));
+                    return has(object, pointer, Object.assign({}, bound.options, options));
                 },
-
-                object,
-                pointer,
-                segments,
-                options,
+                options(options?: Partial<AllOptions>) : Partial<AllOptions> {
+                    if (arguments.length === 0)
+                        return bound.options;
+                    return bound.options = Object.assign({}, bound.options, options);
+                },
                 smartBind: _smartBind
             }
         );

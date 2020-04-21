@@ -31,7 +31,7 @@ describe("coverage", () => {
     describe("unescapeFragment", () => it("mixed", () => expect(jsonPointer.unescapeFragment("~0%7E%7e~1%2F%2f%20%25%22")).to.deep.equal( "~~~/// %\"", "incorrect escaping")));
 
     describe("parse", () => {
-        describe("jsonPointer", () => {
+        describe("pointer", () => {
             it("empty", () => expect(jsonPointer.parse("")).to.deep.equal( [], "incorrect parse result"));
 
             it("invalid", () => {
@@ -88,10 +88,10 @@ describe("coverage", () => {
 
     describe("isFragment", () => {
         it("empty fragment", () => expect(jsonPointer.isFragment("#"), "invalid result").to.be.true);
-        it("valid fragment jsonPointer", () => expect(jsonPointer.isFragment("#/"), "invalid result").to.be.true);
+        it("valid fragment pointer", () => expect(jsonPointer.isFragment("#/"), "invalid result").to.be.true);
         it("invalid (empty)", () => expect(!jsonPointer.isFragment(""), "invalid result").to.be.true);
         it("invalid (not a fragment)", () => expect(!jsonPointer.isFragment("a"), "invalid result").to.be.true);
-        it("invalid (not a fragment jsonPointer)", () => expect(!jsonPointer.isFragment("#a"), "invalid result").to.be.true);
+        it("invalid (not a fragment pointer)", () => expect(!jsonPointer.isFragment("#a"), "invalid result").to.be.true);
     });
 
     describe("compilePointer", () => {
@@ -275,7 +275,7 @@ describe("coverage", () => {
             return JSON.parse(JSON.stringify(x));
         }
 
-        [true, false].forEach((bindObject) => ((bindObject) => describe("object " + (bindObject ? "bound" : "unbound"), () => [true, false].map((bindPointer) => [true, false].map((has) => ((bindPointer, has) => describe((has ? "has" : "has not") + " jsonPointer " + (bindPointer ? "bound" : "unbound"), () => {
+        [true, false].forEach((bindObject) => ((bindObject) => describe("object " + (bindObject ? "bound" : "unbound"), () => [true, false].map((bindPointer) => [true, false].map((has) => ((bindPointer, has) => describe((has ? "has" : "has not") + " pointer " + (bindPointer ? "bound" : "unbound"), () => {
             var object, pointer;
             object = {
                 a: 1
@@ -500,50 +500,49 @@ describe("coverage", () => {
 
             expect(p.object({
                 b: 2
-            }).object()).to.deep.equal( {
+            })).to.deep.equal( {
                 b: 2
             }, "incorrect assignment result");
 
             expect(p.object()).to.deep.equal( {
-                a: 1
+                b: 2
             }, "incorrect meta data");
 
-            expect(p("/a")).to.deep.equal( 1, "incorrect result");
+            expect(p("/b")).to.deep.equal( 2, "incorrect result");
         });
 
         it("pointer", () => {
-            var p;
-            p = jsonPointer.smartBind({
+            const p = jsonPointer.smartBind({
                 pointer: "/a"
             });
 
             expect(p.pointer()).to.deep.equal( "/a", "incorrect meta data");
 
-            expect(p.pointer("/b").pointer()).to.deep.equal( "/b", "incorrect assignment result");
+            expect(p.pointer("/b")).to.deep.equal( "/b", "incorrect assignment result");
 
-            expect(p.pointer()).to.deep.equal( "/a", "incorrect meta data");
+            expect(p.pointer()).to.deep.equal( "/b", "incorrect meta data");
 
             expect(p({
                 a: 1,
                 b: 2
-            })).to.deep.equal( 1, "incorrect result");
+            })).to.deep.equal( 2, "incorrect result");
         });
 
         it("options", () => {
             const p = jsonPointer.smartBind({
                 options: {
-                    hasProp: jsonPointer.hasProp
+                    hasProp: jsonPointer.hasOwnProp
                 }
             });
 
             expect(p.options()).to.deep.equal( {
-                hasProp: jsonPointer.hasProp
+                hasProp: jsonPointer.hasOwnProp
             }, "incorrect meta data");
 
             expect(p.options({
-                hasProp: jsonPointer.hasOwnProp
-            }).options()).to.deep.equal( {
-                hasProp: jsonPointer.hasOwnProp
+                hasProp: jsonPointer.hasProp
+            })).to.deep.equal( {
+                hasProp: jsonPointer.hasProp
             }, "incorrect meta data");
 
             expect(p.options()).to.deep.equal( {
