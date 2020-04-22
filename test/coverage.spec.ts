@@ -1,6 +1,5 @@
 import * as chai from 'chai';
 import jsonPointer from '../src';
-import json = Mocha.reporters.json;
 
 const expect = chai.expect;
 

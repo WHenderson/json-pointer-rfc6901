@@ -1,6 +1,6 @@
 // Ignore this. Just a place for fiddling with the code.
 
-var jp = require('../index');
+var jp = require('../src/index');
 
 var p = jp.smartBind({
   object: { a: 1 },

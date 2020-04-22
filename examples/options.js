@@ -1,4 +1,4 @@
-var pointer = require('../index');
+var pointer = require('../src/index');
 
 try {
   console.log('result:', pointer.get({a: 1}, '/b', {getNotFound: pointer.errorNotFound}));

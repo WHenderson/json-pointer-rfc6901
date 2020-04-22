@@ -1,6 +1,4 @@
-export * from './json-pointer';
-export * from './json-pointer-error';
-export * from './json';
-
+// Backwards compatible export
 import jsonPointer from './json-pointer';
-export default jsonPointer;
+(jsonPointer as any).default = jsonPointer;
+module.exports = jsonPointer;

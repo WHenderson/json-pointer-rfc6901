@@ -1,4 +1,4 @@
-var pointer = require('../index');
+var pointer = require('../src/index');
 
 var obj = { a: 1 };
 

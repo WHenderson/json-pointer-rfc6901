@@ -1,13 +1,14 @@
 {
   "name": "json-pointer-rfc6901",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "src/index.js",
   "license": "MIT",
   "devDependencies": {
     "@types/chai": "^4.2.11",
     "@types/mocha": "^7.0.2",
     "@types/node": "^13.13.0",
     "chai": "^4.2.0",
+    "fast-glob": "^3.2.2",
     "mocha": "^7.1.1",
     "typescript": "^3.8.3"
   },

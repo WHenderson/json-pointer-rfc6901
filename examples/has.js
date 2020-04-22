@@ -1,4 +1,4 @@
-var pointer = require('../index');
+var pointer = require('../src/index');
 
 console.log('result:', pointer.has({ a: 1 }, '/a'));
 // result: true
