@@ -49,7 +49,7 @@
     "gulp-umd": "git+https://github.com/WHenderson/gulp-umd.git",
     "gulp-util": "^3.0.6",
     "lazypipe": "^1.0.1",
-    "lodash": "^3.10.0",
+    "lodash": "^4.17.19",
     "mocha": "^2.2.5"
   }
 }
